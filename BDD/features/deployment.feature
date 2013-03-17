@@ -35,7 +35,7 @@ Feature: Deployments
       And there should be a value "deploy_list"
     Finally REST removes the {object:deployment} "deploy_list"
 
-  Scenario: Deployment does not shows up on wrong list
+  Scenario: Deployment does not show up on wrong list
     Given I require a {object:barclamp} "test"
       And I require a {object:barclamp} "logging"
       And I propose a {object:deployment} "ghost_deploy" on the {object:barclamp} "test"

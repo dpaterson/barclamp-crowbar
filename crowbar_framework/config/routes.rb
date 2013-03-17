@@ -67,7 +67,8 @@ Crowbar::Application.routes.draw do
   # Barclamp UI routes (overlays that can be used generically by barclamps to create custom views)
   # The pattern is /barclamp/[your barclamp]/[method]
   scope 'barclamp' do
-    get "/:barclamp/deployment/:id" => "deployments#show", :as=>"deployment"
+    get "/:barclamp_id/deployment/:id" => "deployments#show", :as=>"deployment"
+    post "/:barclamp_id/deployment" => "deployments#create", :as=>"deployment_create"
     get "graph", :controller=>'barclamp', :action=>"graph", :as=>"barclamp_graph"
     get "(/:id)", :controller=>'barclamp', :action=>"index", :as=>"barclamp"
   end
@@ -108,23 +109,45 @@ Crowbar::Application.routes.draw do
   resources :users, :except => :new
 
   # API routes (must be json and must prefix v2)()
-  scope :defaults => {:format=> 'json'} do
+  scope :defaults => {:format => 'json'} do
 
-    constraints(:id => /([a-zA-Z0-9\-\.\_]*)/, :version => /v[1-9]/ ) do
+    constraints(:id => /([a-zA-Z0-9\-\.\_]*)/, :version => /v[1-9]/) do
 
      # framework resources pattern (not barclamps specific)
      scope 'api' do
         scope 'status' do
-          get "nodes(/:id)" => "nodes#status",  :as=>:nodes_status
-          get "deployments(/:id)" => "deployments#status", :as=>:deployments_status
+          get "nodes(/:id)" => "nodes#status", :as => :nodes_status
+          get "deployments(/:id)" => "deployments#status", :as => :deployments_status
         end
         scope ':version' do
           get "nodes(/:id)/status", :controller => "nodes", :action=>"status"
-            resources :nodes do
+          resources :nodes do
             resources :attribs
             resources :groups
-            match 'transition'   # these should be limited to put, but being more lax for now
-            match 'allocate'   # these should be limited to put, but being more lax for now
+            match 'transition' # these should be limited to put, but being more lax for now
+            match 'allocate' # these should be limited to put, but being more lax for now
+          end
+          resources :barclamps do
+            resources :deployments
+          end
+          resources :deployments
+          resources :snapshots
+          resources :jigs
+          resources :attrib_types
+          resources :attribs
+          resources :role_types
+          resources :roles
+          resources :groups do
+            member do
+              get 'nodes'
+            end
+          end
+          resources :users do
+            post "admin", :controller => "users", :action => "make_admin"
+            delete "admin", :controller => "users", :action => "remove_admin"
+            post "lock", :controller => "users", :action => "lock"
+            delete "lock", :controller => "users", :action => "unlock"
+            put "reset_password", :controller => "users", :action => "reset_password"
           end
           resources :barclamps do
             resources :deployments

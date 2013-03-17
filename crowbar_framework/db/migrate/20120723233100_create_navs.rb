@@ -42,12 +42,12 @@ class CreateNavs < ActiveRecord::Migration
 
     # utils
     Nav.find_or_create_by_item :item=>'utils', :parent_item=>'root', :name=>'nav.utils', :description=>'nav.utils_description', :path=>"utils_path", :order=>6000
-      Nav.find_or_create_by_item :item=>'util_import', :parent_item=>'utils', :name=>'nav.util_import', :description=>'nav.util_import_description', :path=>"utils_import_path", :order=>100, :development=>true
+      Nav.find_or_create_by_item :item=>'util_import', :parent_item=>'utils', :name=>'nav.util_import', :description=>'nav.util_import_description', :path=>"utils_import_path", :order=>100
       Nav.find_or_create_by_item :item=>'util_index', :parent_item=>'utils', :name=>'nav.util_logs', :description=>'nav.util_logs_description', :path=>"utils_path", :order=>200
 
     # help
     Nav.find_or_create_by_item :item=>'help', :parent_item=>'root', :name=>'nav.help', :description=>'nav.help_description', :path=>"docs_path", :order=>9999
-      Nav.find_or_create_by_item :item=>'crowbar_wiki', :parent_item=>'help', :name=>'nav.wiki', :description=>'nav.wiki_description', :path=>"https://crowbar.github.com/", :order=>200
+      Nav.find_or_create_by_item :item=>'crowbar_wiki', :parent_item=>'help', :name=>'nav.wiki', :description=>'nav.wiki_description', :path=>"http://crowbar.github.com/", :order=>200
 
     # users
     Nav.find_or_create_by_item :item=>'users', :parent_item=>'root', :name=>'nav.users', :description=>'nav.users_description', :path=>"manage_users_path", :order=>6000
