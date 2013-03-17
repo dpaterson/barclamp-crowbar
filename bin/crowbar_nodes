@@ -21,6 +21,7 @@ NODES_PATH = "api/v2/nodes"
 
 @commands = {
   "create" => [ "create(ARGV) ", "create <name> <description> <order> or <json> or <file> - create a specific node(s) from arguments, raw json or json file." ],
+  "delete" => [ "delete ARGV.shift", "delete <name_or_id> - delete a node" ],
   "list" => [ "list", "list - show a list of nodes" ],
   "list_status" => [ "list_status", "list_status - show a list of nodes and their status" ],
   "show" => [ "show ARGV.shift, ARGV.shift", "show <name> [arg] - show a specific node" ],
@@ -101,7 +102,7 @@ def show_status(name_or_id)
 end
 
 
-  def create(args)
+def create(args)
   if @data.nil? || @data == "" #not file or direct json import
     @data = {
       "name" => args.shift,
@@ -117,6 +118,20 @@ end
     [ "Failed to create node: #{@data} : Errors in data\n#{struct[0]}", 1 ]
   else
     [ "An error occured while creating the node: #{struct[1]}: #{struct[0]}", 1 ]
+  end
+end
+
+def delete(name_or_id)
+  usage -1 if name_or_id.nil? or name_or_id == ""
+ 
+  struct = delete_json2("#{NODES_PATH}/#{id_or_username}")
+
+  if struct[1] == 200
+    [ "Deleted #{name_or_id}", 0 ]
+  elsif struct[1] == 404
+    [ "Delete failed for #{name_or_id}: Not Found", 1 ] 
+  else
+    [ "Failed to talk to service delete: #{struct[1]}: #{struct[0]}", 1 ]
   end
 end
 

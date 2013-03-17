@@ -64,7 +64,7 @@ class NodesController < ApplicationController
   end
     
   def show
-    respond_with(@node = (Node.find! params[:id])) do |format|
+    respond_with(@node = (Node.find params[:id])) do |format|
       format.html  do
         render
       end
@@ -91,7 +91,7 @@ class NodesController < ApplicationController
          run_in_prod_only do
          Jig.delete_node(n)
        end unless @name.nil?
-    render api_delete Node @node
+       render api_delete Node @node
     end
    end
   end
