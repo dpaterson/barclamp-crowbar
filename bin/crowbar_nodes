@@ -20,6 +20,7 @@ require File.join(File.expand_path(File.dirname(__FILE__)), "barclamp_lib")
 NODES_PATH = "api/v2/nodes"
 
 @commands = {
+  "create" => [ "create(ARGV) ", "create <name> <description> <order> or <json> or <file> - create a specific node(s) from arguments, raw json or json file." ],
   "list" => [ "list", "list - show a list of nodes" ],
   "list_status" => [ "list_status", "list_status - show a list of nodes and their status" ],
   "show" => [ "show ARGV.shift, ARGV.shift", "show <name> [arg] - show a specific node" ],
@@ -27,7 +28,7 @@ NODES_PATH = "api/v2/nodes"
 }
 
 =begin
-  "create" => [ "create ARGV.shift", "create <name> - create a specific node" ],
+  
   "edit" => [ "edit ARGV.shift", "edit <name> - edit a new node" ],
   "delete" => [ "delete ARGV.shift", "delete <name> - delete a node" ],
   "reboot" => [ "action \"reboot\", ARGV.shift", "reboot <name> - reboot a node" ],
@@ -99,21 +100,29 @@ def show_status(name_or_id)
   end
 end
 
-=begin
-def create(name)
-  usage -1 if name.nil? or name == ""
 
-  @data = "{\"name\":\"#{name}\"}" if @data.nil? or @data == ""
-
-  struct = put_json("/", @data)
+  def create(args)
+  if @data.nil? || @data == "" #not file or direct json import
+    @data = {
+      "name" => args.shift,
+      "description" => args.shift,
+      "order" => args.shift
+      }.to_json
+  end
+  struct = post_json2(NODES_PATH, @data)
 
   if struct[1] == 200
-    [ "Created #{name}", 0 ]
+    [ "Created node: #{@data}", 0 ]
+  elsif struct[1] == 400
+    [ "Failed to create node: #{@data} : Errors in data\n#{struct[0]}", 1 ]
   else
-    [ "Failed to talk to service create: #{struct[1]}: #{struct[0]}", 1 ]
+    [ "An error occured while creating the node: #{struct[1]}: #{struct[0]}", 1 ]
   end
 end
 
+
+
+=begin
 def edit(name)
   usage -1 if name.nil? or name == ""
 

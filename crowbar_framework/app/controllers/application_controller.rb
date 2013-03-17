@@ -21,7 +21,14 @@ require 'active_support/core_ext/string'
 # Likewise, all the methods added will be available for all controllers.
 class ApplicationController < ActionController::Base
   
+  respond_to :html, :json
   
+  rescue_from ActiveRecord::RecordNotFound, :with => :rescue_not_found #4xx something
+  rescue_from ActiveRecord::RecordInvalid, :with => :rescue_invalid #422?
+  rescue_from ArgumentError, :with => :rescue_arg_error #400
+  rescue_from RuntimeError, :with => :rescue_runtime # 500
+  
+
   CB_CONTENT_TYPE19 = "application/vnd.crowbar+json; version=1.9"
   CB_CONTENT_TYPE20 = "application/vnd.crowbar+json; version=2.0"
   
@@ -114,6 +121,7 @@ class ApplicationController < ActionController::Base
   # using this makes it easier to update the API format for all models
   def api_delete(type, key=nil)
     if params[:version].eql?('v2') 
+      # o.destroy! unless o.nil?
       key ||= params[:id]
       type.delete type.find_key(key)
       return {:text=>I18n.t('api.deleted', :id=>key, :obj=>'jig')}
@@ -167,6 +175,61 @@ class ApplicationController < ActionController::Base
     }
   end
   set_layout
+  #########################
+  # protected stuff below
+  protected
+  def rescue_not_found(ex) #4xx something
+    Rails.logger.error("rescue_not_found!")
+    respond_with(ex) do |format|
+      Rails.logger.error(ex.message)
+      format.html do
+        render
+      end
+      format.json do
+        return render :text => ex.message, :status => 400
+      end
+    end
+  end
+  
+  def rescue_invalid(ex) #422?
+    Rails.logger.error("rescue_invalid!")
+    respond_with(ex) do |format|
+      format.html do
+         Rails.logger.error(ex.message)
+        render
+      end
+      format.json do
+        return render :text => ex.message, :status => 422
+      end
+    end
+  end
+  
+  def rescue_arg_error(ex) #400
+    Rails.logger.error("rescue_arg_error!")
+    respond_with(ex) do |format|
+      format.html do
+        Rails.logger.error(ex.message)
+        render
+      end
+      format.json do
+        return render :text => ex.message, :status => 400
+      end
+    end
+  end
+  
+  def rescue_runtime(ex) # 500
+    Rails.logger.error(ex.message)
+    respond_with(ex) do |format|
+      Rails.logger.error("rescue_runtime!")
+      format.html do
+        render
+      end
+      format.json do
+        return render :text => ex.message, :status => 500
+      end
+    end
+  end
+ 
   
   #########################
   # private stuff below.

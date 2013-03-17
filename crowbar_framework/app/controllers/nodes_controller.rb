@@ -64,33 +64,55 @@ class NodesController < ApplicationController
   end
     
   def show
+    respond_with(@node = (Node.find! params[:id])) do |format|
+      format.html  do
+        render
+      end
+      format.json do
+        render api_show :node, Node, @node
+      end
+    end
+=begin
     respond_to do |format|
       format.html { @node = Node.find_key params[:id] } # show.html.erb
       format.json { render api_show :node, Node }
     end
+=end
   end
 
   # RESTful DELETE of the node resource
   def destroy
-    n = Node.find_key(params[:id] || params[:name])
-    Rails.logger.info("Will delete #{n.name}")
-    run_in_prod_only do
-      Jig.delete_node(n)
-    end unless n.nil?
-    render api_delete Node
+   respond_with (@node = Node.find_key(params[:id] || params[:name]))  do |format|
+       Rails.logger.info("Will delete #{@node.name}")
+       format.html do
+          render
+       end
+       format.json do
+         run_in_prod_only do
+         Jig.delete_node(n)
+       end unless @name.nil?
+    render api_delete Node @node
+    end
+   end
   end
   
   # RESTfule POST of the node resource
   def create
-    n = Node.create params
-  
-    # DIRTY HACK: Migrate when the Chef jig knows how to add roles to nodes.
-    # All nodes need to have the deployer-client present.
-    run_in_prod_only do
-      Jig.create_node(n)
-      system("knife node run_list add #{n.name} role[deployer-client]")
+    respond_with (@node = Node.new(params))  do |format|
+      Node.transaction do
+        @node.save!
+      end
+      format.html do
+        render
+      end
+      format.json do
+        run_in_prod_only do
+          Jig.create_node(@node)
+          system("knife node run_list add #{@node.name} role[deployer-client]")
+        end
+        render api_show :node, Node, @node.id.to_s, nil, @node
+      end
     end
-    render api_show :node, Node, n.id.to_s, nil, n
   end
   
   def update
