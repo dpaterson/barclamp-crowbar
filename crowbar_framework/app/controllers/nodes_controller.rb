@@ -93,9 +93,7 @@ class NodesController < ApplicationController
           render
        end
        format.json do
-         run_in_prod_only do
-           Jig.delete_node(n)
-         end unless @node.nil?
+         Jig.delete_node(n)
          render api_delete Node, @node
        end
     end
