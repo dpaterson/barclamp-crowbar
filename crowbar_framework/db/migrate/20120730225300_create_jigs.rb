@@ -1,4 +1,4 @@
-# Copyright 2012, Dell
+# Copyright 2013, Dell
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,13 +18,17 @@ class CreateJigs < ActiveRecord::Migration
       t.string :name
       t.string :description,  :null=>true
       t.string :type,         :null=>false
+      t.boolean :active,      :default => false 
+      t.string :server,       :null=>true
+      t.string :client_name,  :null=>true
+      t.string :key,          :null=>true
       t.integer :order,       :default=>10000
       t.timestamps
     end
     #natural key
     add_index(:jigs, :name, :unique => true)   
     # create test jig
-    Jig.find_or_create_by_name(:name =>'test', :order=>9999, :type=>'BarclampCrowbar::Jig') unless Rails.env.production? 
+    BarclampCrowbar::Jig.find_or_create_by_name(:name =>'test', :order=>9999, :active=>true, :description=>'development testing only - does not do anything') unless Rails.env.production? 
   end
 
   def self.down

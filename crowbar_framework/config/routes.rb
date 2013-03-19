@@ -24,6 +24,9 @@ Crowbar::Application.routes.draw do
     get '/', :controller=>'docs', :action=>'index', :as => "docs"
     get 'topic/:id', :controller=>'docs', :action=>'topic', :as => "docs_topic", :constraints => { :id => /.*/ }
   end
+  
+  # UI for jigs
+  resources :jigs
 
   # UI scope
   scope 'utils' do
@@ -52,7 +55,6 @@ Crowbar::Application.routes.draw do
       resources :nodes do as_routes end
       resources :os do as_routes end
       resources :os_packages do as_routes end
-      resources :role_types do as_routes end
       resources :roles do as_routes end
       resources :snapshots do as_routes end
     end
@@ -113,8 +115,6 @@ Crowbar::Application.routes.draw do
 
     constraints(:id => /([a-zA-Z0-9\-\.\_]*)/, :version => /v[1-9]/) do
 
-     # framework resources pattern (not barclamps specific)
-     scope 'api' do
         scope 'status' do
           get "nodes(/:id)" => "nodes#status", :as => :nodes_status
           get "deployments(/:id)" => "deployments#status", :as => :deployments_status
@@ -135,7 +135,6 @@ Crowbar::Application.routes.draw do
           resources :jigs
           resources :attrib_types
           resources :attribs
-          resources :role_types
           resources :roles
           resources :groups do
             member do

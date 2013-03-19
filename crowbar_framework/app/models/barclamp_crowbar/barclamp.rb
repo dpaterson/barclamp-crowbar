@@ -25,7 +25,12 @@ class BarclampCrowbar::Barclamp < Barclamp
     requires = ['deployer', 'provisioner', 'ntp', 'network', 'chef', 'dns', 'logging']
     requires.each do |bc|
       if Barclamp.find_by_name bc
-        deployment.proposal.crowbar_role.require_deployment bc, deployment.name
+        begin 
+          attrib = deployment.proposal.crowbar_role.require_deployment bc, deployment.name
+          Rails.logger.info "#{self.name} added required barclamp #{bc} from attrib id #{attrib.id}"
+        rescue Exception => e
+          Rails.logger.error "#{self.name} could not add required barclamp #{bc} due to error #{e.message}"
+        end
       else
         Rails.logger.error "#{self.name} requires barclamp #{bc} but it does not exist in the database"
       end
@@ -57,7 +62,7 @@ class BarclampCrowbar::Barclamp < Barclamp
   
   # called by the jib when the node changes it's state
   # creates jobs needed for the state
-  def transition(snapshot, node, state, role_type_name=nil)
+  def transition(snapshot, node, state, role_name=nil)
     Rails.logger.debug "Crowbar transition enter: #{name} to #{state}"
 
     # for all transitions
@@ -71,7 +76,7 @@ class BarclampCrowbar::Barclamp < Barclamp
       end
     end
 
-    super snapshot, node, state, role_type_name
+    super snapshot, node, state, role_name
 
   end
 

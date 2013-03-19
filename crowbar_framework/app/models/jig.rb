@@ -27,6 +27,7 @@
 class Jig < ActiveRecord::Base
 
   attr_accessible :name, :description, :type, :order
+  attr_accessible :server, :client_name, :key, :active
 
   # 
   # Validate the name should unique 
@@ -66,8 +67,7 @@ class Jig < ActiveRecord::Base
   # intended to be a hook for expansion similar to the find_jig_for_config
   # Return an array of jigs applicable to this node.
   def self.find_jigs_for_node(node)
-    # For now, assume that there's just 1 jig [ Jig.find_by_name('admin_chef') ]
-    [ Jig.all[0] ]
+    Jig.all  # TODO just return the active ones
   end
 
 =begin 
@@ -89,28 +89,35 @@ Delete a node from all jig. The exact actions depend on the jig.
   def self.delete_node(node)
     broadcast_to_jigs { |jig|  jig.delete_node(node) }    
   end
-  
+
   #
   # Update node infomration from a Jig, and process node attributes.
   # Attributes are tied to Runs and to Events, so a new Event is created, using description passed in
   def self.refresh_node(descr, node)    
     jigs = find_jigs_for_node(node)
-    bcs = node.deployments.map { |d| d.barclamp }.uniq
-    jigs.each { |j| 
+#Rails.logger.debug "ZEHICLE #{BarclampChef::Jig.all.first.inspect} ??"
+#Rails.logger.debug "ZEHICLE #{BarclampChef::Jig.all.first.read_node_data(node)} ??"
+#Rails.logger.debug "ZEHICLE #{node.name} Jig refresh #{jigs.join(',')}"
+ #   bcs = node.deployments.map { |d| d.barclamp }.uniq
+    jigs.each do |j| 
       d = j.read_node_data(node)
-      next if  d.nil?
-      evt = j.create_event(nil)
-      evt.name="refesh:node:#{node.id}#{Time.now.to_i}"
-      barclamps={}
-      node.deployments.inject { | barclamps,dep|
-         barclamps[dep.barclamp] ||=[]
-         barclamps[dep.barclamp] << dep.name
-      }      
-      barclamps.each {|bc|
+#Rails.logger.debug "ZEHICLE #{node.name} > jig #{j.name} got #{d}"
+    end
+  
+#      next if  d.nil?
+#      evt = j.create_event(nil)
+#      evt.name="refesh:node:#{node.id}#{Time.now.to_i}"
+#      barclamps={}
+#      node.deployments.inject { | barclamps,dep|
+#         barclamps[dep.barclamp] ||=[]
+#         barclamps[dep.barclamp] << dep.name
+#      }      
+#      barclamps.each {|bc|
         ### this should be per deployment... but many other updates required.
-        bc.process_inbound_data  d
-      }
-    }
+#        bc.process_inbound_data  d
+#      }
+
+
   end
 
 =begin 
@@ -189,7 +196,7 @@ Expecting the deployment to be "static" - i.e. not actively being modified.
 
   # Return a JSON representation of the information this jig knows about this node.
   def read_node_data(node)
-    # to be over-ridden.    
+    Rails.logger.debug("jig.read_node_data(#{node.name}) not implemented for #{self.class}.  This may be OK")
   end
  
 
@@ -252,11 +259,13 @@ private
 =end
   def self.broadcast_to_jigs(desc="no description")
     raise "no block given" unless block_given?
-    Jig.all.each { |x|  
-      begin        
+    Jig.all.each { |x|
+      begin
         yield x
       rescue => exc
         Rails.logger.warn("failed to invoke #{desc} on jig: #{x.inspect}")
+        Rails.logger.warn("Exception: #{exc.inspect}")
+        Rails.logger.warn("Backtrace: #{exc.backtrace}")
       end
     }
   end

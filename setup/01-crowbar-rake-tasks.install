@@ -21,8 +21,8 @@ fi
 case $OS in
     ubuntu)
         dpkg -l crowbar-barclamp-crowbar &>/dev/null || \
-        apt-get -y install curl sqlite sqlite3 libsqlite3-dev markdown vim;;
-    redhat) yum -y install curl sqlite sqlite-devel python-markdown vim gcc-c++;;
+        apt-get -y install curl sqlite sqlite3 libsqlite3-dev vim;;
+    redhat) yum -y install curl sqlite sqlite-devel vim gcc-c++;;
 esac
 
 if ! grep -q '^crowbar:' /etc/passwd; then
@@ -89,10 +89,3 @@ for d in /var/run/crowbar /opt/dell/crowbar_framework; do
 done
 
 /etc/init.d/crowbar start
-
-printf "Waiting for Crowbar web app to start"
-while ! grep -q crowbar <  <(/opt/dell/bin/crowbar users list); do
-    printf "."
-    sleep 1
-done
-printf " Done.\n"

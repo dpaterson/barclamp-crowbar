@@ -15,10 +15,8 @@
 
 class Node < ActiveRecord::Base
   before_validation :default_population
-  before_destroy    :jig_delete
-  
   attr_accessible :name, :description, :alias, :order, :admin, :allocated
-  
+
   # Make sure we have names that are legal
   # old:
   #  FQDN_RE = /^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9]))*\.([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])*\.([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$/
@@ -44,7 +42,7 @@ class Node < ActiveRecord::Base
   # Validate the name should unique (no matter the case)
   # and that it starts with a valid FQDN
   #
-  validates_uniqueness_of :name, :case_sensitive => false, :message => I18n.t("db.notunique", :default=>"Name item must be unique")
+  validates_uniqueness_of :name, :case_sensitive => false, :message => I18n.t("db.notunique", :default=>"Item must be unique")
   validates_format_of :name, :with=>FQDN_RE, :message => I18n.t("db.fqdn", :default=>"Name must be a fully qualified domain name.")
   validates_length_of :name, :maximum => 255
 
@@ -329,11 +327,6 @@ class Node < ActiveRecord::Base
   end
 
   private
-
-  # make sure we do housekeeping before we remove the DB object
-  def jig_delete
-    Jig.delete_node self
-  end
 
   # make sure some safe values are set for the node
   def default_population

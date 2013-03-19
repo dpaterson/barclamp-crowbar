@@ -41,6 +41,11 @@ class NodesController < ApplicationController
       result = Node.find_keys params[:id]
       unless result.nil?
         result.each do |node|
+          #Rails.logger.debug "ZEHICLE #{node.name} nodes_controller"
+          # CB2 temporary polling
+          # Jig.refresh_node "temporary polling from nodes_controller.status", node
+          
+          # CB1 approach
           state[node.id] = node.state
           status[node.id] = node.status
           i18n[node.state] = I18n.t node.state, :scope =>'state', :default=>node.state unless i18n.has_key? node.state
@@ -263,12 +268,4 @@ in: params from request
       return Node.find_by_id id
     end
   end
-
-=begin   
-Only run the supplied block on production environemnt (typically because it uses chef or somesuch)
-=end  
-  def run_in_prod_only(&block)
-    yield if Rails.env.production?
-  end
-
 end
