@@ -40,25 +40,54 @@ module ApiHelper
         []
       end
     end
-  
+=begin
     # Helper to allow API to use ID or name
     def find_key(key)
+      Rails.logger.info "find_key(key): #{key}"
       begin
         if db_id?(key)
+          Rails.logger.info "db_id? true !!!!!!!!!!!!!!!!!!!!!!!!"
           find key.to_i
         elsif key.is_a? String
           if key =~ /^[0-9]+$/
             find key.to_i
           else
+            Rails.logger.info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! It's a string find by name : #{key}"
             find_by_name key rescue nil
           end
         elsif key.is_a? ActiveRecord::Base  
+          
           # if we get the object itself then use find to valid it exists
           find key.id
         end          
-      rescue ActiveRecord::RecordNotFound => e
-        nil
-      end
+     rescue ActiveRecord::RecordNotFound => e
+       nil
+     end
+   end
+=end
+
+    # Helper to allow API to use ID or name
+    def find_key(key)
+      Rails.logger.info "find_key(key): #{key}"
+      # begin
+        if db_id?(key)
+          Rails.logger.info "db_id? true !!!!!!!!!!!!!!!!!!!!!!!!"
+          find key.to_i
+        elsif key.is_a? String
+          if key =~ /^[0-9]+$/
+            find key.to_i
+          else
+            Rails.logger.info "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! It's a string find by name : #{key}"
+            find_by_name! key #rescue nil
+          end
+        elsif key.is_a? ActiveRecord::Base  
+          
+          # if we get the object itself then use find to valid it exists
+          find key.id
+        end          
+      #rescue ActiveRecord::RecordNotFound => e
+      #  nil
+      # end
     end
 
     # get id of object by id string or name string

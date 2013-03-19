@@ -83,17 +83,17 @@ class NodesController < ApplicationController
   # RESTful DELETE of the node resource
   def destroy
    respond_with (@node = Node.find_key(params[:id] || params[:name]))  do |format|
-       Rails.logger.info("Will delete #{@node.name}")
+       Rails.logger.info("Will delete #{@node.name}") unless @node.nil?
        format.html do
           render
        end
        format.json do
          run_in_prod_only do
-         Jig.delete_node(n)
-       end unless @name.nil?
-       render api_delete Node @node
+           Jig.delete_node(n)
+         end unless @node.nil?
+         render api_delete Node, @node
+       end
     end
-   end
   end
   
   # RESTfule POST of the node resource

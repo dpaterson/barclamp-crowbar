@@ -121,15 +121,15 @@ def create(args)
   end
 end
 
-def delete(name_or_id)
-  usage -1 if name_or_id.nil? or name_or_id == ""
+def delete(id_or_name)
+  usage -1 if id_or_name.nil? or id_or_name == ""
  
-  struct = delete_json2("#{NODES_PATH}/#{id_or_username}")
+  struct = delete_json2("#{NODES_PATH}/#{id_or_name}")
 
   if struct[1] == 200
-    [ "Deleted #{name_or_id}", 0 ]
+    [ "Deleted #{id_or_name}", 0 ]
   elsif struct[1] == 404
-    [ "Delete failed for #{name_or_id}: Not Found", 1 ] 
+    [ "Delete failed for #{id_or_name}: Not Found", 1 ] 
   else
     [ "Failed to talk to service delete: #{struct[1]}: #{struct[0]}", 1 ]
   end

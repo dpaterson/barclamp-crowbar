@@ -119,9 +119,9 @@ class ApplicationController < ActionController::Base
     
   # formats API for delete
   # using this makes it easier to update the API format for all models
-  def api_delete(type, key=nil)
+  def api_delete(type, key=nil, o=nil)
     if params[:version].eql?('v2') 
-      # o.destroy! unless o.nil?
+      o.destroy unless o.nil?
       key ||= params[:id]
       type.delete type.find_key(key)
       return {:text=>I18n.t('api.deleted', :id=>key, :obj=>'jig')}
@@ -186,7 +186,7 @@ class ApplicationController < ActionController::Base
         render
       end
       format.json do
-        return render :text => ex.message, :status => 400
+        return render :text => ex.message, :status => 404
       end
     end
   end
