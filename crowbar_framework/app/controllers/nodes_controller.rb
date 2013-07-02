@@ -18,15 +18,15 @@ class NodesController < ApplicationController
   # API GET /crowbar/v2/nodes
   # UI GET /dashboard
   def index
-    # EventQueue.publish(Events::WebEvent.new("nodes index page"))
-    # k = Delayed::Job.enqueue(Jobs::TestJob.new)
-    # puts "DEBUG: k = #{k.inspect}"
-
-    if params.has_key? :group_id
+    @list = if params.has_key? :group_id
       g = Group.find_key params[:group_id]
-      render api_index :group, g.nodes
+      g.nodes
     else
-      render api_index :node, Node.all
+      Node.all
+    end
+    respond_to do |format|
+      format.html { }
+      format.json { render api_index :node, @list }
     end
   end
   
@@ -69,53 +69,29 @@ class NodesController < ApplicationController
   end
     
   def show
-    respond_with(@node = (Node.find params[:id])) do |format|
-      format.html  do
-        render
-      end
-      format.json do
-        render api_show :node, Node, @node
-      end
-    end
-=begin
     respond_to do |format|
       format.html { @node = Node.find_key params[:id] } # show.html.erb
       format.json { render api_show :node, Node }
     end
-=end
   end
 
   # RESTful DELETE of the node resource
   def destroy
-   respond_with (@node = Node.find_key(params[:id] || params[:name]))  do |format|
-       Rails.logger.info("Will delete #{@node.name}") unless @node.nil?
-       format.html do
-          render
-       end
-       format.json do
-         Jig.delete_node(n)
-         render api_delete Node, @node
-       end
-    end
+    n = Node.find_key(params[:id] || params[:name])
+    Rails.logger.info("Will delete #{n.name}")
+    Jig.delete_node(n)
+    render api_delete Node
   end
   
   # RESTfule POST of the node resource
   def create
-    respond_with (@node = Node.new(params))  do |format|
-      Node.transaction do
-        @node.save!
-      end
-      format.html do
-        render
-      end
-      format.json do
-        run_in_prod_only do
-          Jig.create_node(@node)
-          system("knife node run_list add #{@node.name} role[deployer-client]")
-        end
-        render api_show :node, Node, @node.id.to_s, nil, @node
-      end
-    end
+    n = Node.create params
+    
+    # DIRTY HACK: Migrate when the Chef jig knows how to add roles to nodes.
+    # All nodes need to have the deployer-client present.
+    Jig.create_node(n)
+    # this should move to the chef jig create_node
+  render api_show :node, Node, n.id.to_s, nil, n
   end
   
   def update
