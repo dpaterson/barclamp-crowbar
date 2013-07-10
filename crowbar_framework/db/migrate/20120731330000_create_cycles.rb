@@ -1,4 +1,4 @@
-# Copyright 2012, Dell
+# Copyright 2013, Dell
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-class CreateRoleRequires < ActiveRecord::Migration
+class CreateCycles < ActiveRecord::Migration
   def change  
-    create_table :role_requires do |t|
-      t.belongs_to  :role,              :null=>false
-      t.string      :requires,          :null=>false
+    create_table :cycles do |t|
+      t.integer     :state,           :null=>true
+      t.string      :name,            :null=>true   # expected for error, blocked, transistioning
+      t.string      :description,     :null=>true
+      t.integer     :order,           :default=>1000
       t.timestamps
     end
-    #natural key
-    add_index(:role_requires, [:role_id, :requires], :unique => true)
-    add_index(:role_requires, [:requires], :unique => false)
+    #natural key 
+    # none
   end
 end

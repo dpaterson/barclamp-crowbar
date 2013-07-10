@@ -12,19 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-class CreateDeployments < ActiveRecord::Migration
-  def change
-    create_table :deployments do |t|
-      t.string      :name,                        :null=>false
-      t.string      :description,                 :null=>true
-      t.references  :proposed_snapshot,           :null=>true
-      t.references  :committed_snapshot,          :null=>true
-      t.references  :active_snapshot,             :null=>true
-      t.references  :parent, :deployment
-      t.timestamps
-    end
-    #natural key
-    add_index(:deployments,    :name,     :unique => true)
-  end
 
-end
+class Scaffolds::CyclesController < ApplicationController
+  active_scaffold :cycle do |conf|
+
+  end
+end 
