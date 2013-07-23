@@ -44,13 +44,11 @@ validate(JSON) when is_record(JSON, obj) ->
 % Common Routine
 % Returns list of nodes in the system to check for bad housekeeping
 inspector() -> 
-  bdd_restrat:inspector(nodes).  % shared inspector works here, but may not always
+  bdd_restrat:inspector(node).  % shared inspector works here, but may not always
 
 % Common Routine
 % Creates JSON used for POST/PUT requests
-json(Name, Description, Order) ->
-  json:output([{"name",Name},{"description", Description}, {"order", Order}]).
-
+json(Name, Description, Order) -> crowbar:json([{name, Name}, {description, Description}, {order, Order}]).
      
 % Common Routines
 

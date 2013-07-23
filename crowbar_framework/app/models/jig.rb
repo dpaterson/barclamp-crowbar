@@ -35,25 +35,24 @@ class Jig < ActiveRecord::Base
   #
   validates_uniqueness_of :name, :case_sensitive => false, :message => I18n.t("db.notunique", :default=>"Name item must be unique")
   validates_format_of     :name, :with=> /^[a-zA-Z][_a-zA-Z0-9]*$/, :message => I18n.t("db.lettersnumbers", :default=>"Name limited to [_a-zA-Z0-9]")
-  
-  has_many        :roles,      :dependent => :destroy
 
-=begin 
-Create a node in all jig. The exact actions depend on the jig.
-=end
+  # Create a node in all jig. The exact actions depend on the jig.
   def self.create_node(node)
     broadcast_to_jigs { |jig| jig.create_node(node) }    
   end
 
-=begin 
-Delete a node from all jig. The exact actions depend on the jig.
-=end
+  # Delete a node from all jig. The exact actions depend on the jig.
   def self.delete_node(node)
     broadcast_to_jigs { |jig|  jig.delete_node(node) }    
   end
 
-  def self.execute(cycle)
-    broadcast_to_jigs { |jig|  jig.execute(cycle) }    
+  # execute all node roles in transition on all jigs
+  def self.run()
+    NodeRole.where(:state=>NodeRole::TRANSITION).each do |nr|
+      j = nr.role.jig
+      puts "ZEHICLE #{j.name} running #{nr.inspect}"
+      j.run(nr)
+    end
   end
 
   # OVERRIDE with actual methods
@@ -65,6 +64,14 @@ Delete a node from all jig. The exact actions depend on the jig.
   def create_node(node)
     Rails.logger.debug("jig.create_node(#{node.name}) not implemented for #{self.class}.  This may be OK")
     {}
+  end
+
+  # Run a single noderole.
+  # The noderole must be in TRANSITION state.
+  # This function is intended to be overridden by the jig subclasses,
+  # and only used for debugging purposes.
+  def run(nr)
+    raise "Cannot call run on the top-level Jig!"
   end
 
   def execute(cycle)

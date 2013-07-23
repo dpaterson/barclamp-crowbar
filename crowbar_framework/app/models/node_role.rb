@@ -24,16 +24,18 @@ class NodeRole < ActiveRecord::Base
   belongs_to      :snapshot
   belongs_to      :cycle
   has_one         :deployment,        :through => :snapshot
+  has_one         :barclamp,          :through => :role
 
   # find other node-roles in this snapshot using their role or node
-  scope           :peers_by_role,     ->(s,r) { where(['snapshot_id=? AND role_id=?', s.id, r.id]) }
-  scope           :peers_by_node,     ->(s,n) { where(['snapshot_id=? AND node_id=?', s.id, n.id]) }
+  scope           :peers_by_state,    ->(ss,state) { where(['snapshot_id=? AND state=?', ss.id, state]) }
+  scope           :peers_by_role,     ->(ss,role)  { where(['snapshot_id=? AND role_id=?', ss.id, role.id]) }
+  scope           :peers_by_node,     ->(ss,node)  { where(['snapshot_id=? AND node_id=?', ss.id, node.id]) }
   scope           :peers_by_node_and_role,     ->(s,n,r) { where(['snapshot_id=? AND role_id=? AND node_id=?', s.id, r.id, n.id]) }
 
   # make sure that new node-roles have require upstreams 
   # validate        :deployable,        :if => :deployable?
   has_and_belongs_to_many :parents, :class_name => "NodeRole", :join_table => "node_role_pcms", :foreign_key => "parent_id", :association_foreign_key => "child_id"
-    has_and_belongs_to_many :children, :class_name => "NodeRole", :join_table => "node_role_pcms", :foreign_key => "child_id", :association_foreign_key => "parent_id"
+  has_and_belongs_to_many :children, :class_name => "NodeRole", :join_table => "node_role_pcms", :foreign_key => "child_id", :association_foreign_key => "parent_id"
 
   # State transitions:
   # All node roles start life in the PROPOSED state.
@@ -59,6 +61,7 @@ class NodeRole < ActiveRecord::Base
   TRANSITION =  2
   BLOCKED    =  3
   PROPOSED   =  4
+  STATES     = { ERROR => 'error', ACTIVE => 'active', TODO => 'todo', TRANSITION => 'transition', BLOCKED => 'blocked', PROPOSED => 'proposed'  }
 
   class InvalidTransition < Exception
     def initialize(node_role,from,to,str=nil)
@@ -76,16 +79,57 @@ class NodeRole < ActiveRecord::Base
   class InvalidState < Exception
   end
 
-  def self.state_name(cstate)
-    case cstate
-    when ERROR then "ERROR"
-    when ACTIVE then "ACTIVE"
-    when TODO then "TODO"
-    when TRANSITION then "TRANSITION"
-    when BLOCKED then "BLOCKED"
-    when PROPOSED then "PROPOSED"
-    else raise InvalidState.new("#{state} is not a valid NodeRole state!")
+  # MOVE INTO SNAPSHOT
+  class MissingJig < Exception
+    def initalize(nr)
+      @errstr = "NodeRole #{nr.name}: Missing jig #{nr.jig_name}"
     end
+    def to_s
+      @errstr
+    end
+    def to_str
+      to_s
+    end
+  end
+
+  # lookup i18n version of state
+  def state_name
+    NodeRole.state_name(state)
+  end
+
+  def self.state_name(state)
+    raise InvalidState.new("#{state || 'nil'} is not a valid NodeRole state!") unless state and STATES.include? state
+    I18n.t(STATES[state], :default=>'Unknown', :scope=>'node_role.state')
+  end
+
+  def self.anneal!
+    
+    # NOTE THIS CODE IS MOVING TO SNAPSHOT!!!
+
+    # A very basic annealer.
+    queue = Hash.new
+    NodeRole.transaction do
+      # Check to see if we have all our jigs before we send everything off.
+      NodeRole.where(["state = ?",NodeRole::TODO]).each do |nr|
+        thisjig = nr.jig
+        raise MissingJig.new(nr) unless thisjig.kind_of?(Jig)
+        queue[thisjig] ||= []
+        queue[thisjig] << nr
+      end
+      # Only set the candidate states inside the transaction.
+      queue.each do |thisjig,candidates|
+        candidates.each do |c|
+          c.state = NodeRole::TRANSITION
+        end
+      end
+    end
+    # Actaully run the noderoles outside of the transaction.
+    queue.each do |thisjig,candidates|
+      candidates.each do |c|
+        thisjig.run(c)
+      end
+    end
+    nil
   end
 
   def state
@@ -95,7 +139,12 @@ class NodeRole < ActiveRecord::Base
   def error?
     state == ERROR
   end
-  
+
+  # convenience methods
+  def name
+    "#{deployment.name}: #{node.name}: #{role.name}" rescue I18n.t('unknown')
+  end
+
   def active?
     state == ACTIVE
   end
@@ -172,6 +221,11 @@ class NodeRole < ActiveRecord::Base
         end
       when TRANSITION
         # We can only go to TRANSITION from TODO
+        # As an optimization, we may also want to allow a transition from
+        # BLOCKED to TRANSITION directly -- the goal would be to allow a jig
+        # to batch up noderole runs by noticing that a noderole it was handed
+        # in TRANSITION has children on the same node utilizing the same jig
+        # in BLOCKED, and preemptivly grabbing them to batch them up.
         unless cstate == TODO
           raise InvalidTransition.new(self,cstate,val)
         end
@@ -203,7 +257,7 @@ class NodeRole < ActiveRecord::Base
   
   # convenience methods
   def name
-    "#{deployment.name}: #{node.name}: #{role.name}"
+    "#{deployment.name}: #{node.name}: #{role.name}" rescue I18n.t('unknown')
   end
 
   def commit!
@@ -227,8 +281,12 @@ class NodeRole < ActiveRecord::Base
     role.description
   end
 
+  def jig
+    role.jig
+  end
+
   def get_template
-    data ||= role.node_template || '{}'
+    data ||= (role.node_template || '{}') rescue data = '{}'
   end
 
 end

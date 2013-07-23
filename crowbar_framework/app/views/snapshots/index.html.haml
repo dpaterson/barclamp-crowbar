@@ -1,0 +1,21 @@
+%h1= t '.title'
+
+%table.data.box
+  %thead
+    %tr
+      %th= t '.state'
+      %th= t '.deployment'
+      %th= t '.state'
+      %th= t '.snapshot'
+      %th= t '.description'
+  %tbody
+    -@list.each do |i|
+      %tr
+        %td= i.state
+        %td= link_to i.deployment.name, deployment_path(i.deployment.id)
+        %td
+          = t '.proposed' if i.proposed?
+          = t '.committed' if i.committed?
+          = t '.active' if i.active?
+        %td= link_to i.name, snapshot_path(:id=>i.id) 
+        %td= i.description

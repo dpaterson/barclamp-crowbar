@@ -23,16 +23,35 @@ class JigsController < ApplicationController
   end
 
   def show
-    render api_show :jig, Jig
+    respond_to do |format|
+      format.html { @jig = Jig.find_key params[:id] }
+      format.json { render api_show :jig, Jig }
+    end
   end
 
   def create
-    j = Jig.create! params
-    render api_show :jig, Jig, nil, nil, j
-  end
+    unless Rails.env.development?
+      render  api_not_supported("post", "jig")
+    else
+      j = Jig.create! params
+      render api_show :jig, Jig, nil, nil, j
+    end
+  end  
   
-  def destroy
-    render api_delete Jig
+  def update
+    unless Rails.env.development?
+      render  api_not_supported("post", "jig")
+    else
+      render api_update :jig, Jig
+    end
   end
-      
+
+  def destroy
+    unless Rails.env.development?
+      render  api_not_supported("post", "jig")
+    else
+      render api_delete Jig
+    end
+  end
+
 end

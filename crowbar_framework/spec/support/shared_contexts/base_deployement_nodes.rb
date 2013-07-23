@@ -20,16 +20,30 @@ shared_context "crowbar test deployment" do
   
   before(:all) do
     # we need this to ensure that we have the crowbar barclamp
-    bc = Barclamp.import 'crowbar' unless Barclamp.find_by_name 'crowbar'
-    d = Deployment.find_or_create_by_name :name=>I18n.t('default'), :description=>I18n.t('automatic')
+    bc = Barclamp.find_by_name('crowbar') || Barclamp.import('crowbar')
   end
 
-  let(:deployment) { Deployment.find_by_name I18n.t('default') }
+  let(:deployment) { Deployment.find_by_name 'system' }
+  let(:active)     { deployment.active }
+
+  describe Deployment do
+
+    it "has an active deployment" do
+      expect(deployment.active).to be_kind_of(Snapshot)
+      expect(active).to be_kind_of(Snapshot)
+    end
+
+    it "is not committed" do
+      expect(deployment.committed).to be_nil
+    end
+
+  end
+
 
 end  
 
 # Just 2 dummy nodes
 shared_context "2 dummy nodes" do
-  let(:node1) { Node.create :name=>"unit1.test.com" }
+  let(:node1) { Node.create :name=>"unit1.test.com", :admin=>true }
   let(:node2) { Node.create :name=>"unit2.test.com" }
 end
